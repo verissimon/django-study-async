@@ -1,7 +1,11 @@
-{% extends 'base.html' %} {% load static %} {% block 'cabecalho' %}
-<link href="{% static 'usuarios/css/cadastro.css' %}" rel="stylesheet" />
-{% endblock %} {% block 'conteudo' %}
+{% extends 'base.html' %}
+{% load static %}
 
+{% block 'cabecalho' %}
+    <link href="{% static 'usuarios/css/cadastro.css' %}" rel="stylesheet" />
+{% endblock %}
+
+{% block 'conteudo' %}
 <div class="bg1">
     <div class="container">
         <div class="row">
