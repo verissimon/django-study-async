@@ -102,6 +102,22 @@ def iniciar_desafio(req):
         dificuldade = req.POST.get('dificuldade')
         qtd_perguntas = req.POST.get('qtd_perguntas')
         
+        if titulo == '' or categorias == [] or not qtd_perguntas:
+            messages.add_message(
+                req,
+                constants.WARNING,
+                'Preencha o formulário corretamente. Dê um título, selecione uma ou mais categorias e escolha o número de questões do desafio.'
+            )
+            return redirect('/flashcard/iniciar_desafio')
+                  
+        if int(qtd_perguntas) < 1:
+            messages.add_message(
+                req,
+                constants.WARNING,
+                'O desafio deve ter uma quantidade de perguntas maior que zero.'
+            )
+            return redirect('/flashcard/iniciar_desafio')
+
         desafio = Desafio(
             user = req.user,
             titulo = titulo,
@@ -115,15 +131,16 @@ def iniciar_desafio(req):
             Flashcard.objects
                 .filter(user = req.user)
                 .filter(dificuldade = dificuldade)
-                .filter(categoria_id__in = categorias)
+                .filter(categoria_id__in = categorias) # categorias que pertencem a uma das categorias
                 .order_by('?')
         )
 
         if flashcards.count() < int(qtd_perguntas):
+            desafio.delete()
             messages.add_message(
                 req,
                 constants.WARNING,
-                f'a quantidade máxima de flashcards disponíveis para essa(s) categoria(s) e dificuldade deve ser: {flashcards.count()}.'
+                'Não há um número de flashcards grande o suficiente pertencentes a essa dificuldade e categorias.'
             )
             return redirect('/flashcard/iniciar_desafio')
 
@@ -137,5 +154,9 @@ def iniciar_desafio(req):
             desafio.flashcards.add(flashcard_desafio)
 
         desafio.save()
-
-        return HttpResponse('Desafio criado com sucesso')
+        messages.add_message(
+                req,
+                constants.SUCCESS,
+                f'Desafio {desafio.titulo} criado com sucesso.'
+            )
+        return redirect('/flashcard/iniciar_desafio')
