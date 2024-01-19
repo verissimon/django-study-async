@@ -1,7 +1,10 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, HttpResponse
 from django.contrib.messages import constants
 from django.contrib import messages
-from .models import Flashcard, Categoria
+from .models import Flashcard, Categoria, Desafio, FlashcardDesafio
+
+def index(req):
+    return HttpResponse('voce esta em flashcard/')
 
 def novo_flashcard(req):
     if not req.user.is_authenticated:
@@ -80,3 +83,59 @@ def deletar_flashcard(req, id):
         'Flashcard deletado com sucesso.'
     )
     return redirect('/flashcard/novo_flashcard')
+
+def iniciar_desafio(req):
+    if req.method == 'GET':
+        categorias = Categoria.objects.all()
+        dificuldades = Flashcard.DIFICULDADE_CHOICES
+        return render(
+            req,
+            'iniciar_desafio.html',
+            {
+                'categorias': categorias,
+                'dificuldades': dificuldades,
+            })
+    
+    if req.method == 'POST':
+        titulo = req.POST.get('titulo')
+        categorias = req.POST.getlist('categoria')
+        dificuldade = req.POST.get('dificuldade')
+        qtd_perguntas = req.POST.get('qtd_perguntas')
+        
+        desafio = Desafio(
+            user = req.user,
+            titulo = titulo,
+            quantidade_perguntas = qtd_perguntas,
+            dificuldade = dificuldade,
+        )
+        desafio.save()
+        desafio.categoria.add(*categorias)
+
+        flashcards = (
+            Flashcard.objects
+                .filter(user = req.user)
+                .filter(dificuldade = dificuldade)
+                .filter(categoria_id__in = categorias)
+                .order_by('?')
+        )
+
+        if flashcards.count() < int(qtd_perguntas):
+            messages.add_message(
+                req,
+                constants.WARNING,
+                f'a quantidade máxima de flashcards disponíveis para essa(s) categoria(s) e dificuldade deve ser: {flashcards.count()}.'
+            )
+            return redirect('/flashcard/iniciar_desafio')
+
+        flashcards = flashcards[: int(qtd_perguntas)]
+
+        for f in flashcards:
+            flashcard_desafio = FlashcardDesafio(
+                flashcard=f,
+            )
+            flashcard_desafio.save()
+            desafio.flashcards.add(flashcard_desafio)
+
+        desafio.save()
+
+        return HttpResponse('Desafio criado com sucesso')
