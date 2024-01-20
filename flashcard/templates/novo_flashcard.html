@@ -8,6 +8,8 @@
 {% endblock 'cabecalho' %}
 
 {% block 'conteudo' %}
+{% include "partials/header.html" %}
+
     <div class="container">
         <br>
         <br>
@@ -89,7 +91,7 @@
                 <br>
                 {% for flash in flashcards %}
                     <div class="box-new-flashcard">
-                        <div class="flashcard flash-diff-{{flash.dificuldade}}">
+                        <div class="flashcard {{flash.css_dificuldade}}">
                             <div class="flashcard-categoria">
                                 {{flash.categoria}}
                             </div>

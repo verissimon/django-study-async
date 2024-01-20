@@ -1,4 +1,5 @@
-from django.shortcuts import render, redirect, HttpResponse
+from django.shortcuts import render, redirect
+from django.http import Http404, HttpResponse
 from django.contrib.messages import constants
 from django.contrib import messages
 from .models import Flashcard, Categoria, Desafio, FlashcardDesafio
@@ -160,3 +161,104 @@ def iniciar_desafio(req):
                 f'Desafio {desafio.titulo} criado com sucesso.'
             )
         return redirect('/flashcard/iniciar_desafio')
+    
+def listar_desafio(req):
+    def get_dif_display(dif_tuple, dif_sigla):
+        for tup in dif_tuple:
+            if tup[0] == dif_sigla:
+                return tup[1]
+        return None
+    
+    desafios = Desafio.objects.filter(user = req.user)
+    dificuldades = Flashcard.DIFICULDADE_CHOICES
+    filtro_categoria = req.GET.get('categoria')
+    filtro_dif: tuple = req.GET.get('dificuldade')
+    
+    if filtro_categoria:
+        desafios = desafios.filter(categoria__id=filtro_categoria)
+        messages.add_message(
+            req,
+            constants.SUCCESS,
+            f'Desafios com categoria \'{Categoria.objects.get(id=filtro_categoria)}\' filtrados com sucesso.'
+        )
+    
+    if filtro_dif:
+        desafios = desafios.filter(dificuldade=filtro_dif)
+        dif_display = get_dif_display(dificuldades, filtro_dif)
+        messages.add_message(
+            req,
+            constants.SUCCESS,
+            f'Desafios de dificuldade \'{dif_display}\' filtrados com sucesso.'
+        )
+
+    def get_desafio_status(desafio):
+        for flash in desafio.flashcards.all():
+            if flash.respondido == False: 
+                # se pelo menos um flashcard não foi respondido,
+                # o desafio é considerado não concluído
+                return 'Não concluído'
+            else:
+                return 'Concluído'
+            
+    for desafio in desafios:
+        desafio.status = get_desafio_status(desafio)
+
+    return render(
+        req,
+        'listar_desafio.html',
+        {
+            'desafios': desafios,
+            'categorias': Categoria.objects.all(),
+            'dificuldades': dificuldades
+        }
+    )
+
+def desafio(req, id):
+    desafio = Desafio.objects.get(id=id)
+
+    if not desafio.user == req.user:
+        raise Http404()
+        
+    if req.method == 'GET':
+        acertos = (
+            desafio.flashcards
+                .filter(respondido=True)
+                .filter(acertou=True)
+                .count()
+                )
+        erros = (
+            desafio.flashcards
+                .filter(respondido=True)
+                .filter(acertou=False)
+                .count()
+                )
+        faltantes = (
+            desafio.flashcards
+                .filter(respondido=False)
+                .count()
+                )
+        return render(
+            req,
+            'desafio.html',
+            {
+                'desafio': desafio,
+                'acertos': acertos,
+                'erros': erros,
+                'faltantes': faltantes,
+            },
+        )
+    
+def responder_flashcard(req, id):
+    flashcard_desafio = FlashcardDesafio.objects.get(id=id)
+    acertou = req.GET.get('acertou')
+    desafio_id = req.GET.get('desafio_id')
+
+    if not flashcard_desafio.flashcard.user == req.user:
+        raise Http404()
+    
+    flashcard_desafio.respondido = True
+    flashcard_desafio.acertou = True if acertou == '1' else False
+    flashcard_desafio.save()
+
+    return redirect(f'/flashcard/desafio/{desafio_id}')
+

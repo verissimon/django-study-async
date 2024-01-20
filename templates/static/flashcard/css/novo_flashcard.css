@@ -17,15 +17,15 @@
     font-weight: bold;
 }
 
-.flash-diff-F {
+.flashcard-facil {
     border-left: 20px solid #1dab1a;
 }
 
-.flash-diff-M {
+.flashcard-medio {
     border-left: 20px solid #e8910e;
 }
 
-.flash-diff-D {
+.flashcard-dificil {
     border-left: 20px solid #fe0000;
 }
 
