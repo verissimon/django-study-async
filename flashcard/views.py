@@ -215,7 +215,8 @@ def listar_desafio(req):
 
 def desafio(req, id):
     desafio = Desafio.objects.get(id=id)
-
+    categorias = desafio.categoria.all()
+    
     if not desafio.user == req.user:
         raise Http404()
         
@@ -245,6 +246,7 @@ def desafio(req, id):
                 'acertos': acertos,
                 'erros': erros,
                 'faltantes': faltantes,
+                'categorias': categorias
             },
         )
     
