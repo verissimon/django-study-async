@@ -1,8 +1,6 @@
 # django-study-flashcards
 
-## App para controle de estoque
-
-Site simples feito com django para registrar, listar e excluir produtos.
+Site simples feito com django para registrar e listar flashcards com perguntas e respostas sobre determinada área do conhecimento.
 
 ### 1. Pré-requisitos
 
