@@ -38,7 +38,7 @@ def cadastro(req):
                 )
             messages.add_message(
                 req, 
-                constants.ERROR, 
+                constants.SUCCESS, 
                 'Usuário cadastrado com sucesso.'
             )
             return redirect('/usuarios/logar')

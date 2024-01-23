@@ -3,6 +3,7 @@ from django.http import Http404, HttpResponse
 from django.contrib.messages import constants
 from django.contrib import messages
 from .models import Flashcard, Categoria, Desafio, FlashcardDesafio
+from django.core import serializers
 
 def index(req):
     return HttpResponse('voce esta em flashcard/')
@@ -233,7 +234,7 @@ def desafio(req, id):
                 .filter(acertou=False)
                 .count()
                 )
-        faltantes = (
+        nao_respondidos = (
             desafio.flashcards
                 .filter(respondido=False)
                 .count()
@@ -245,7 +246,7 @@ def desafio(req, id):
                 'desafio': desafio,
                 'acertos': acertos,
                 'erros': erros,
-                'faltantes': faltantes,
+                'nao_respondidos': nao_respondidos,
                 'categorias': categorias
             },
         )
@@ -263,4 +264,53 @@ def responder_flashcard(req, id):
     flashcard_desafio.save()
 
     return redirect(f'/flashcard/desafio/{desafio_id}')
+
+def relatorio(req, id):
+    desafio = Desafio.objects.get(id=id)
+    if not desafio.user == req.user:
+        raise Http404()
+
+    acertos = (
+            desafio.flashcards
+                .filter(respondido=True)
+                .filter(acertou=True)
+                .count()
+                )
+    erros = (
+        desafio.flashcards
+            .filter(respondido=True)
+            .filter(acertou=False)
+            .count()
+            )
+    nao_respondido = (
+        desafio.flashcards
+                .filter(respondido=False)
+                .count()
+                )
+
+    dados = [acertos, erros, nao_respondido]
+
+
+    categorias_desafio = desafio.categoria.all()
+    name_categoria_desafio = [i.nome for i in categorias_desafio]
+
+    dados_por_categoria = []
+    for categoria in categorias_desafio:
+        acertos = (
+            desafio.flashcards
+                .filter(flashcard__categoria=categoria)
+                .filter(acertou=True)
+        )
+        dados_por_categoria.append(acertos.count())
+
+    return render(
+                req,
+                'relatorio.html',
+                {
+                    'desafio': desafio,
+                    'dados': dados,
+                    'categorias_desafio': name_categoria_desafio,
+                    'dados_por_categoria': dados_por_categoria,
+                },
+            )
 
