@@ -3,7 +3,6 @@ from django.http import Http404, HttpResponse
 from django.contrib.messages import constants
 from django.contrib import messages
 from .models import Flashcard, Categoria, Desafio, FlashcardDesafio
-from django.core import serializers
 
 def index(req):
     return HttpResponse('voce esta em flashcard/')

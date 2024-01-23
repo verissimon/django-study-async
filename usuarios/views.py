@@ -51,6 +51,9 @@ def cadastro(req):
             return redirect('/usuarios/cadastro')
         
 def logar(req):
+    if req.user.is_authenticated:
+        return redirect('novo_flashcard')
+
     if req.method == 'GET':
         return render(req, 'login.html')
     elif req.method == 'POST':
@@ -61,7 +64,7 @@ def logar(req):
         if user:
             auth.login(req, user)
             messages.add_message(req, constants.SUCCESS, 'Logado com sucesso')
-            return redirect('/usuarios/logar') #redirect('/flashcard/novo_flashcard')
+            return redirect('/flashcard/novo_flashcard')
             
         else:
             messages.add_message(req, constants.ERROR, 'Usuario ou senha invalidos')
